@@ -107,8 +107,11 @@ Crafty.c('Enemy', {
 			// If hit by bullet, destroy the enemy and the bullet and increment the player's score
 			var b = this.hit('Bullet')
 			if (b) {
+				// Get angle of bullet, convert to radians
+				//var angle = b[0].obj.rotation * (Math.PI / 180);
+
 				// Particle effect
-				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 1, 10);
+				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 1, 10, 0.01, 0, 2 * Math.PI);
 
 				// Remove entities
 				this.destroy();
@@ -162,7 +165,7 @@ Crafty.c('Particles', {
 		this._Particles = Crafty.clone(this._Particles);
 	},
 
-	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration) {
+	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration, deceleration, angleLow, angleHigh) {
 		// Create our own canvas to draw on, set the size and add it to the stage
 		var c, ctx;
 
@@ -182,6 +185,9 @@ Crafty.c('Particles', {
 		this._Particles.timetolivehigh = timetolivehigh;
 		this._Particles.speed = speed;
 		this._Particles.duration = duration;
+		this._Particles.decelerationMax = deceleration;
+		this._Particles.angleLow = angleLow;
+		this._Particles.angleHigh = angleHigh;
 
 		// Destroy the particle engine when the component is removed or destroyed
 		this.bind('Remove', function () {
@@ -231,11 +237,17 @@ Crafty.c('Particles', {
 		timetolivehigh: 0,
 		speed: 0,
 		duration: 0,
+		decelerationMax: 0,
+		angleLow: 0,
+		angleHigh: 0,
 
 		// Object to create a particle from
 		particle: {
 			x: 0,
 			y: 0,
+			velocityX: 0,
+			velocityY: 0,
+			deceleration: 0,
 			angle: 0,
 			frame: 0,
 			timetolive: 0,
@@ -249,21 +261,31 @@ Crafty.c('Particles', {
 				/* Generate some particles... add five particles this frame
 				 * Build an object with random angle and random timetolive
 				 * between the two boundaries, and generate a random color
-				 * then push this into our array of particles */
+				 * we can also calculate the x and y velocity as this will
+				 * not change throughout the duration of the particle's
+				 * existence, then push this into our array of particles */
 				for (var i = 0; i < 5; i++) {
 					var newParticle = Object.create(this.particle);
-					newParticle.angle = Crafty.math.randomNumber(0, 2 * Math.PI);
+					newParticle.angle = Crafty.math.randomNumber(this.angleLow, this.angleHigh);
 					newParticle.timetolive = Crafty.math.randomInt(this.timetolivelow, this.timetolivehigh);
 					newParticle.color = 'rgb(255, ' + Crafty.math.randomInt(20, 160) + ', 0)';
+					newParticle.velocityX = this.speed * Math.sin(newParticle.angle);
+					newParticle.velocityY = this.speed * Math.cos(newParticle.angle);
+					newParticle.deceleration = Crafty.math.randomNumber(0, this.decelerationMax);
+
 					this.particles.push(newParticle);
 				};
 			}
 
 			// Update the position of each particle in the list
 			for (var i = 0; i < this.particles.length; i++) {
-				// Use trig and the particles angle to calculate how much to change the (x, y) by each frame
-				this.particles[i].x += this.speed * Math.sin(this.particles[i].angle);
-				this.particles[i].y += this.speed * Math.cos(this.particles[i].angle);
+				// Update (x, y) position
+				this.particles[i].x += this.particles[i].velocityX;
+				this.particles[i].y += this.particles[i].velocityY;
+
+				// Apply deceleration to the particle based on it's angle
+				this.particles[i].velocityX -= this.particles[i].deceleration * Math.sin(this.particles[i].angle);
+				this.particles[i].velocityY -= this.particles[i].deceleration * Math.cos(this.particles[i].angle);
 
 				/* Increment the number of frames this particle has been alive for, if this is greater
 				 * than the particle's timetolive, disable the particle from being rendered */
