@@ -107,6 +107,8 @@ Crafty.c('Enemy', {
 			// If hit by bullet, destroy the enemy and the bullet and increment the player's score
 			var b = this.hit('Bullet')
 			if (b) {
+				// Particle effect
+				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 1, 10);
 
 				// Remove entities
 				this.destroy();
@@ -156,11 +158,110 @@ Crafty.c('FollowingEnemy', {
 
 Crafty.c('Particles', {
 	init: function () {
-		this.requires('2D, Canvas')
-			.attr({ x:0, y:0 });
+		// Deep clone
+		this._Particles = Crafty.clone(this._Particles);
 	},
 
-	particles: function () {
+	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration) {
+		// Create our own canvas to draw on
+		var c, ctx;
 
+		c = document.createElement("canvas");
+		c.width = Crafty.viewport.width;
+		c.height = Crafty.viewport.height;
+		c.style.position = 'absolute';
+
+		Crafty.stage.elem.appendChild(c);
+
+		ctx = c.getContext('2d');
+
+		// Set up default particle
+		this._Particles.particle.x = x;
+		this._Particles.particle.y = y;
+
+		this._Particles.timetolivelow = timetolivelow;
+		this._Particles.timetolivehigh = timetolivehigh;
+		this._Particles.speed = speed;
+		this._Particles.duration = duration;
+
+		// Clean up the DOM when this component is removed
+		this.bind('Remove', function () {
+			Crafty.stage.elem.removeChild(c);
+		}).bind("RemoveComponent", function (id) {
+			if (id === "particles")
+				Crafty.stage.elem.removeChild(c);
+		});
+
+		this.bind('EnterFrame', function () {
+			// TODO: We need to implement selective redraw at some point...maybe
+			ctx.clearRect(0, 0, Crafty.viewport.width, Crafty.viewport.height);
+
+			// Update particles
+			this._Particles.update();
+			
+			// Render them!
+			this._Particles.render(ctx);
+		});
+	},
+
+	_Particles: {
+		// Our list of particles
+		particles: [],
+
+		frame: 0,
+
+		running: true,
+
+		timetolivelow: 0,
+		timetolivehigh: 0,
+		speed: 0,
+		duration: 0,
+
+		particle: {
+			x: 0,
+			y: 0,
+			angle: 0,
+			frame: 0,
+			timetolive: 0,
+			enabled: true,
+			color: ''
+		},
+
+		update: function (frame) {
+			if (this.running) {
+				// Push new particle into particles
+				for (var i = 0; i < 5; i++) {
+					var newParticle = Object.create(this.particle);
+					newParticle.angle = Crafty.math.randomNumber(0, 2 * Math.PI);
+					newParticle.timetolive = Crafty.math.randomInt(this.timetolivelow, this.timetolivehigh);
+					newParticle.color = 'rgb(255, ' + Crafty.math.randomInt(20, 160) + ', 0)';
+					this.particles.push(newParticle);
+				};
+			}
+
+			for (var i = 0; i < this.particles.length; i++) {
+				this.particles[i].x += this.speed * Math.sin(this.particles[i].angle);
+				this.particles[i].y += this.speed * Math.cos(this.particles[i].angle);
+				this.particles[i].frame++;
+				if (this.particles[i].frame >= this.particles[i].timetolive) {
+					this.particles[i].enabled = false;
+				}
+			};
+
+			if (this.frame >= this.duration) {
+				this.running = false;
+			}
+
+			this.frame++;
+		},
+
+		render: function (ctx) {
+			for (var i = 0; i < this.particles.length; i++) {
+				if (this.particles[i].enabled) {
+					ctx.fillStyle = this.particles[i].color;
+					ctx.fillRect(this.particles[i].x, this.particles[i].y, 2, 2);
+				}
+			};
+		}
 	}
 });
