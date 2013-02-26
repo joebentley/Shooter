@@ -111,17 +111,17 @@ Crafty.c('Enemy', {
 				//var angle = b[0].obj.rotation * (Math.PI / 180);
 
 				// Particle effect
-				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 1, 10, 0.01, 0, 2 * Math.PI);
+				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 0.5, 10, 0.01, 0, 2 * Math.PI);
 
 				// Remove entities
 				this.destroy();
 				b[0].obj.destroy();
 
-				// Update score
+				/*// Update score
 				Crafty('Score').each(function() {
 					this.score += 100;
 					this.text('Score: ' + this.score);
-				});
+				});*/
 			}
 
 			if (Crafty('Player').length == 0) {
@@ -257,7 +257,7 @@ Crafty.c('Particles', {
 
 		update: function (frame) {
 			// If the particle engine is running, start generating new particles
-			if (this.running) {
+			if (this.running && this.particles.length <= 200) {
 				/* Generate some particles... add five particles this frame
 				 * Build an object with random angle and random timetolive
 				 * between the two boundaries, and generate a random color
@@ -283,15 +283,43 @@ Crafty.c('Particles', {
 				this.particles[i].x += this.particles[i].velocityX;
 				this.particles[i].y += this.particles[i].velocityY;
 
-				// Apply deceleration to the particle based on it's angle
-				this.particles[i].velocityX -= this.particles[i].deceleration * Math.sin(this.particles[i].angle);
-				this.particles[i].velocityY -= this.particles[i].deceleration * Math.cos(this.particles[i].angle);
+				/*// Apply deceleration to the particle based on it's angle
+				if (this.particles[i].velocityX > 0.4 || this.particles[i].velocityY > 0.4) {
+					this.particles[i].velocityX -= this.particles[i].deceleration * Math.sin(this.particles[i].angle);
+					this.particles[i].velocityY -= this.particles[i].deceleration * Math.cos(this.particles[i].angle);
+				}*/
+
+				// Make them follow the player, and check for collision, update player and stuff...
+				var p = Crafty('Player');
+
+				// Accelerate towards player, limit v...
+				if (p.x > this.particles[i].x) {
+					if (this.particles[i].velocityX < 2) { this.particles[i].velocityX += 0.04; }
+				}
+				if (p.x < this.particles[i].x) {
+					if (this.particles[i].velocityX > -2) { this.particles[i].velocityX -= 0.04; }
+				}
+				if (p.y > this.particles[i].y) {
+					if (this.particles[i].velocityY < 2) { this.particles[i].velocityY += 0.04; }
+				}
+				if (p.y < this.particles[i].y) {
+					if (this.particles[i].velocityY > -2) { this.particles[i].velocityY -= 0.04; }
+				}
+
+				if (this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
+					this.particles[i].enabled = false;
+					// Update score
+					Crafty('Score').each(function() {
+						this.score += 1;
+						this.text('Score: ' + this.score);
+					});
+				}
 
 				/* Increment the number of frames this particle has been alive for, if this is greater
 				 * than the particle's timetolive, disable the particle from being rendered */
 				this.particles[i].frame++;
 				if (this.particles[i].frame >= this.particles[i].timetolive) {
-					this.particles[i].enabled = false;
+					//this.particles[i].enabled = false;
 				}
 			};
 

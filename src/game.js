@@ -24,7 +24,7 @@ Game = {
 
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
-				.attr({ x:20, y:20, w:100, h:20, z:1, score:0 })
+				.attr({ x:20, y:20, w:200, h:20, z:1, score:0 })
 				.text('Score: 0')
 				.textColor('#FFFFFF');
 
