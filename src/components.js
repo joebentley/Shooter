@@ -27,6 +27,16 @@ Crafty.c('Player', {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
 			}
+
+			// Die if hit by enemy bullet
+			var b = this.hit('Bullet');
+			if (b) {
+				if (b[0].obj.enemy) {
+					this.removeComponent('MouseFollow', false);
+					this.destroy();
+					b[0].obj.destroy();
+				}
+			}
 		})
 	}
 });
@@ -51,7 +61,7 @@ Crafty.c('MouseFollow', {
 			// If the player left clicks the screen, fire a bullet in the direction we are facing
 			// TODO: replace height and width with actual generic calculations
 			if (e.mouseButton === Crafty.mouseButtons.LEFT) {
-				Crafty.e('Bullet').bullet(x + 9, y + 9, rotation);
+				Crafty.e('Bullet').bullet(x + 9, y + 9, rotation, false);
 			}
 		})
 
@@ -73,11 +83,14 @@ Crafty.c('Bullet', {
 			.color('rgb(255, 255, 0)');
 
 		this.origin('center');
+
+		this.enemy = false;
 	},
 
-	bullet: function (x, y, direction) {
+	bullet: function (x, y, direction, enemy) {
 		this.x = x;
 		this.y = y;
+		this.enemy = enemy;
 
 		var speed = 5;
 
@@ -107,23 +120,27 @@ Crafty.c('Enemy', {
 			// If hit by bullet, destroy the enemy and the bullet and increment the player's score
 			var b = this.hit('Bullet')
 			if (b) {
-				// Get angle of bullet, convert to radians
-				//var angle = b[0].obj.rotation * (Math.PI / 180);
+				// Only die if not enemy bullet
+				if (!b[0].obj.enemy) {
+					// Get angle of bullet, convert to radians
+					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
-				// Particle effect
-				Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 0.5, 10, 0.01, 0, 2 * Math.PI);
+					// Particle effect
+					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 0.5, 10, 0.01, true);
 
-				// Remove entities
-				this.destroy();
-				b[0].obj.destroy();
+					// Remove entities
+					this.destroy();
+					b[0].obj.destroy();
 
-				/*// Update score
-				Crafty('Score').each(function() {
-					this.score += 100;
-					this.text('Score: ' + this.score);
-				});*/
+					/*// Update score
+					Crafty('Score').each(function() {
+						this.score += 100;
+						this.text('Score: ' + this.score);
+					});*/
+				}
 			}
 
+			// Kill self if no player alive
 			if (Crafty('Player').length == 0) {
 				this.destroy();
 			}
@@ -159,13 +176,30 @@ Crafty.c('FollowingEnemy', {
 	}
 });
 
+Crafty.c('ShootingEnemy', {
+	init: function () {
+		this.requires('FollowingEnemy');
+	},
+
+	shootingenemy: function (x, y, speed) {
+		// Call parent constructor
+		this.followingenemy(x, y, speed);
+
+		this.bind('EnterFrame', function (e) {
+			if (e.frame % 60 === 0) {
+				Crafty.e('Bullet').bullet(this.x + 3, this.y + 3, this.rotation, true);
+			}
+		});
+	}
+});
+
 Crafty.c('Particles', {
 	init: function () {
 		// Deep clone
 		this._Particles = Crafty.clone(this._Particles);
 	},
 
-	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration, deceleration, angleLow, angleHigh) {
+	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration, deceleration, follow) {
 		// Create our own canvas to draw on, set the size and add it to the stage
 		var c, ctx;
 
@@ -186,8 +220,7 @@ Crafty.c('Particles', {
 		this._Particles.speed = speed;
 		this._Particles.duration = duration;
 		this._Particles.decelerationMax = deceleration;
-		this._Particles.angleLow = angleLow;
-		this._Particles.angleHigh = angleHigh;
+		this._Particles.follow = follow;
 
 		// Destroy the particle engine when the component is removed or destroyed
 		this.bind('Remove', function () {
@@ -238,8 +271,7 @@ Crafty.c('Particles', {
 		speed: 0,
 		duration: 0,
 		decelerationMax: 0,
-		angleLow: 0,
-		angleHigh: 0,
+		follow: true,
 
 		// Object to create a particle from
 		particle: {
@@ -266,7 +298,7 @@ Crafty.c('Particles', {
 				 * existence, then push this into our array of particles */
 				for (var i = 0; i < 5; i++) {
 					var newParticle = Object.create(this.particle);
-					newParticle.angle = Crafty.math.randomNumber(this.angleLow, this.angleHigh);
+					newParticle.angle = Crafty.math.randomNumber(0, 2 * Math.PI);
 					newParticle.timetolive = Crafty.math.randomInt(this.timetolivelow, this.timetolivehigh);
 					newParticle.color = 'rgb(255, ' + Crafty.math.randomInt(20, 160) + ', 0)';
 					newParticle.velocityX = this.speed * Math.sin(newParticle.angle);
@@ -289,30 +321,32 @@ Crafty.c('Particles', {
 					this.particles[i].velocityY -= this.particles[i].deceleration * Math.cos(this.particles[i].angle);
 				}*/
 
-				// Make them follow the player, and check for collision, update player and stuff...
-				var p = Crafty('Player');
+				if (this.follow === true) {
+					// Make them follow the player, and check for collision, update player and stuff...
+					var p = Crafty('Player');
 
-				// Accelerate towards player, limit v...
-				if (p.x > this.particles[i].x) {
-					if (this.particles[i].velocityX < 2) { this.particles[i].velocityX += 0.04; }
-				}
-				if (p.x < this.particles[i].x) {
-					if (this.particles[i].velocityX > -2) { this.particles[i].velocityX -= 0.04; }
-				}
-				if (p.y > this.particles[i].y) {
-					if (this.particles[i].velocityY < 2) { this.particles[i].velocityY += 0.04; }
-				}
-				if (p.y < this.particles[i].y) {
-					if (this.particles[i].velocityY > -2) { this.particles[i].velocityY -= 0.04; }
-				}
+					// Accelerate towards player, limit v...
+					if (p.x > this.particles[i].x) {
+						if (this.particles[i].velocityX < 2) { this.particles[i].velocityX += 0.04; }
+					}
+					if (p.x < this.particles[i].x) {
+						if (this.particles[i].velocityX > -2) { this.particles[i].velocityX -= 0.04; }
+					}
+					if (p.y > this.particles[i].y) {
+						if (this.particles[i].velocityY < 2) { this.particles[i].velocityY += 0.04; }
+					}
+					if (p.y < this.particles[i].y) {
+						if (this.particles[i].velocityY > -2) { this.particles[i].velocityY -= 0.04; }
+					}
 
-				if (this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
-					this.particles[i].enabled = false;
-					// Update score
-					Crafty('Score').each(function() {
-						this.score += 1;
-						this.text('Score: ' + this.score);
-					});
+					if (this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
+						this.particles[i].enabled = false;
+						// Update score
+						Crafty('Score').each(function() {
+							this.score += 1;
+							this.text('Score: ' + this.score);
+						});
+					}
 				}
 
 				/* Increment the number of frames this particle has been alive for, if this is greater
@@ -341,3 +375,80 @@ Crafty.c('Particles', {
 		}
 	}
 });
+
+Crafty.c('Starfield', {
+	init: function () {
+		// Deep copy
+		this._Stars = Crafty.clone(this._Stars);
+	},
+
+	starfield: function () {
+		// Create our own canvas to draw on, set the size and add it to the stage
+		var c, ctx;
+
+		c = document.createElement("canvas");
+		c.width = Crafty.viewport.width;
+		c.height = Crafty.viewport.height;
+		c.style.position = 'absolute';
+
+		Crafty.stage.elem.appendChild(c);
+
+		ctx = c.getContext('2d');
+
+		// Destroy the particle engine when the component is removed or destroyed
+		this.bind('Remove', function () {
+			Crafty.stage.elem.removeChild(c);
+		}).bind("RemoveComponent", function (id) {
+			if (id === "starfield")
+				Crafty.stage.elem.removeChild(c);
+		});
+
+		this.bind('EnterFrame', function (e) {
+			// Clear the canvas
+			ctx.clearRect(0, 0, Crafty.viewport.width, Crafty.viewport.height);
+
+			// Update and render the stars
+			this._Stars.update(e.frame);
+			this._Stars.render(ctx);
+		});
+	},
+
+	_Stars: {
+		stars: [],
+
+		star: {
+			x: 0,
+			y: 0,
+			speed: 0,
+			size: 0
+		},
+
+		update: function (frame) {
+			if (frame % 5 == 0) {
+				// Generate a new star
+				var newStar = Object.create(this.star);
+				newStar.x = Crafty.math.randomInt(0, Crafty.viewport.width);
+				newStar.speed = Crafty.math.randomInt(1, 2);
+				newStar.size = newStar.speed;
+				this.stars.push(newStar);
+			}
+
+			for (var i = 0; i < this.stars.length; i++) {
+				this.stars[i].y += this.stars[i].speed;
+
+				if (this.stars[i].y > Crafty.viewport.height + 100) {
+					this.stars.remove(i);
+				}
+			};
+		},
+
+		render: function (ctx) {
+			ctx.fillStyle = 'white';
+
+			// Render each star
+			for (var i = 0; i < this.stars.length; i++) {
+				ctx.fillRect(this.stars[i].x, this.stars[i].y, this.stars[i].size, this.stars[i].size);
+			};
+		}
+	}
+})

@@ -20,6 +20,8 @@ Game = {
 				}
 			});
 
+			Crafty.e('Starfield').starfield();
+
 			Crafty.e('Player');
 
 			// Display score
@@ -27,6 +29,8 @@ Game = {
 				.attr({ x:20, y:20, w:200, h:20, z:1, score:0 })
 				.text('Score: 0')
 				.textColor('#FFFFFF');
+
+			Crafty.e('ShootingEnemy').shootingenemy(400, 400, 1);
 
 			Crafty.bind('reset', function () {
 				Crafty('Player').destroy();
@@ -60,3 +64,10 @@ Game = {
 		Crafty.scene('Gameplay');
 	}
 }
+
+// Remove array item
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
