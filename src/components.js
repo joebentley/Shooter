@@ -451,4 +451,4 @@ Crafty.c('Starfield', {
 			};
 		}
 	}
-})
+});
