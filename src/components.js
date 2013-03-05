@@ -7,6 +7,8 @@ Crafty.c('Player', {
 
 		this.origin('center');
 
+		var tripleshot = false;
+
 		this.bind('EnterFrame', function () {
 			// Stop movement on screen edge
 			if (this.x < 0) {
@@ -22,7 +24,7 @@ Crafty.c('Player', {
 				this.y = 400 - this.h;
 			}
 
-			// Destroy this and the MouseFollow entity if hit enemy
+			// Destroy this and the MouseFollow entity on collision with enemy
 			if (this.hit('Enemy')) {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
@@ -43,10 +45,13 @@ Crafty.c('Player', {
 			// If the player left clicks the screen, fire a bullet in the direction we are facing
 			// TODO: replace height and width with actual generic calculations
 			if (e.mouseButton === Crafty.mouseButtons.LEFT) {
-				Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
-				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation - 20, false);
-				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation, false);
-				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation + 20, false);
+				if (!tripleshot) {
+					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
+				} else {
+					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation - 10, false);
+					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
+					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation + 10, false);
+				}
 			}
 		})
 	}
@@ -79,6 +84,7 @@ Crafty.c('Bullet', {
 
 		this.origin('center');
 
+		// True if bullet was fired by an enemy
 		this.enemy = false;
 	},
 
@@ -115,8 +121,8 @@ Crafty.c('Enemy', {
 			// If hit by bullet, destroy the enemy and the bullet and increment the player's score
 			var b = this.hit('Bullet')
 			if (b) {
-				// Only die if not enemy bullet
-				if (!b[0].obj.enemy) {
+				// Only die if not enemy bullet and if inside screen
+				if (!b[0].obj.enemy && this.x > -15 && this.x < 615 && this.y > -15 && this.y < 415) {
 					// Get angle of bullet, convert to radians
 					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
