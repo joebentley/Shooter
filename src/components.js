@@ -59,10 +59,6 @@ Crafty.c('MouseFollow', {
 		var mouseX = 0;
 		var mouseY = 0;
 
-		var x = 0;
-		var y = 0;
-		var rotation = 0;
-
 		this.bind('mousemovement', function (e) {
 			mouseX = Crafty.mousePos.x;
 			mouseY = Crafty.mousePos.y;
@@ -71,10 +67,6 @@ Crafty.c('MouseFollow', {
 		this.bind('EnterFrame', function () {
 			// Use trig to find rotation amount, we add 90 to line the 0 value with the y-axis instead of the x-axis
 			this.rotation = (Math.atan2(mouseY - this.y, mouseX - this.x) * 180 / Math.PI) + 90;
-
-			x = this.x;
-			y = this.y;
-			rotation = this.rotation;
 		});
 	}
 });
