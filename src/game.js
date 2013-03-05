@@ -8,6 +8,10 @@ Game = {
 		var wave = 1;
 
 		Crafty.scene('Gameplay', function () {
+			// We use a background object to handle mouse movement and actions
+			// over the whole screen by making it the width and height of the
+			// screen and not drawing it. We do this because the Mouse component
+			// events only trigger on the entity that the component is attached to.
 			var background = Crafty.e('2D, Mouse, Keyboard').attr({ x:0, y:0, w:600, h:400 });
 			background.bind('MouseMove', function (e) {
 				Crafty.trigger('mousemovement', e);
@@ -32,9 +36,23 @@ Game = {
 				.textColor('#FFFFFF');
 
 			Crafty.bind('reset', function () {
+				// Clear game entities
 				Crafty('Player').destroy();
 				Crafty('Enemy').each(function () { this.destroy(); });
 				Crafty('FollowingEnemy').each(function () { this.destroy(); });
+				Crafty('ShootingEnemy').each(function () { this.destroy(); });
+				Crafty('Bullet').each(function () { this.destroy(); });
+				Crafty('Particles').each(function () { this.destroy(); });
+
+				// Update score
+				Crafty('Score').each(function() {
+						this.score = 0;
+						this.text('Score: ' + this.score);
+				});
+
+				// Reset waves
+				wave = 1;
+				enemies = 0;
 
 				Crafty.e('Player');
 			});

@@ -1,7 +1,7 @@
 Crafty.c('Player', {
 	init: function () {
 		this.requires('Fourway, Color, DOM, MouseFollow, Keyboard, Collision')
-			.attr({ x:300, y:200, w:20, h:20, z:1 })
+			.attr({ x:290, y:190, w:20, h:20, z:1 })
 			.color('rgb(20, 125, 40)')
 			.fourway(2);
 
@@ -44,7 +44,7 @@ Crafty.c('Player', {
 Crafty.c('MouseFollow', {
 	init: function () {
 		this.requires('2D');
-		
+
 		var mouseX = 0;
 		var mouseY = 0;
 
