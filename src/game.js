@@ -29,6 +29,8 @@ Game = {
 
 			Crafty.e('Player');
 
+			Crafty.e('Powerup').powerup(200, -20, 2, 'tripleshot');
+
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
 				.attr({ x:20, y:20, w:200, h:20, z:1, score:0 })

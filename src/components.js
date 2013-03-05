@@ -39,6 +39,15 @@ Crafty.c('Player', {
 					b[0].obj.destroy();
 				}
 			}
+
+			// If hit powerup, enable it
+			var p = this.hit('Powerup');
+			if (p) {
+				if (p[0].obj.type === 'tripleshot') {
+					tripleshot = true;
+					p[0].obj.destroy();
+				}
+			}
 		})
 
 		this.bind('clickedscreen', function (e) {
@@ -106,6 +115,25 @@ Crafty.c('Bullet', {
 				this.destroy();
 			}
 		})
+	}
+});
+
+Crafty.c('Powerup', {
+	init: function () {
+		this.requires('2D, Color, DOM')
+			.attr({ x:200, y:-20, w:15, h:15, speed:0, type:'tripleshot' })
+			.color('rgb(0, 0, 255)');
+
+		this.bind('EnterFrame', function () {
+			this.y += this.speed;
+		});
+	},
+
+	powerup: function (x, y, speed, type) {
+		this.x = x;
+		this.y = y;
+		this.speed = speed;
+		this.type = type;
 	}
 });
 
