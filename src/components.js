@@ -38,6 +38,17 @@ Crafty.c('Player', {
 				}
 			}
 		})
+
+		this.bind('clickedscreen', function (e) {
+			// If the player left clicks the screen, fire a bullet in the direction we are facing
+			// TODO: replace height and width with actual generic calculations
+			if (e.mouseButton === Crafty.mouseButtons.LEFT) {
+				Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
+				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation - 20, false);
+				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation, false);
+				//Crafty.e('Bullet').bullet(x + 9, y + 9, rotation + 20, false);
+			}
+		})
 	}
 });
 
@@ -56,14 +67,6 @@ Crafty.c('MouseFollow', {
 			mouseX = Crafty.mousePos.x;
 			mouseY = Crafty.mousePos.y;
 		});
-
-		this.bind('clickedscreen', function (e) {
-			// If the player left clicks the screen, fire a bullet in the direction we are facing
-			// TODO: replace height and width with actual generic calculations
-			if (e.mouseButton === Crafty.mouseButtons.LEFT) {
-				Crafty.e('Bullet').bullet(x + 9, y + 9, rotation, false);
-			}
-		})
 
 		this.bind('EnterFrame', function () {
 			// Use trig to find rotation amount, we add 90 to line the 0 value with the y-axis instead of the x-axis
@@ -126,7 +129,7 @@ Crafty.c('Enemy', {
 					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
 					// Particle effect
-					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 50, 80, 0.5, 10, 0.01, true);
+					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 300, 0.5, 10, 0.01, true);
 
 					// Remove entities
 					this.destroy();
@@ -199,7 +202,7 @@ Crafty.c('Particles', {
 		this._Particles = Crafty.clone(this._Particles);
 	},
 
-	particles: function (x, y, timetolivelow, timetolivehigh, speed, duration, deceleration, follow) {
+	particles: function (x, y, timetolive, speed, duration, deceleration, follow) {
 		// Create our own canvas to draw on, set the size and add it to the stage
 		var c, ctx;
 
@@ -215,8 +218,9 @@ Crafty.c('Particles', {
 		// Set up particle and params
 		this._Particles.particle.x = x;
 		this._Particles.particle.y = y;
-		this._Particles.timetolivelow = timetolivelow;
-		this._Particles.timetolivehigh = timetolivehigh;
+		//this._Particles.timetolivelow = timetolivelow;
+		//this._Particles.timetolivehigh = timetolivehigh;
+		this._Particles.timetolive = timetolive;
 		this._Particles.speed = speed;
 		this._Particles.duration = duration;
 		this._Particles.decelerationMax = deceleration;
@@ -230,6 +234,11 @@ Crafty.c('Particles', {
 				Crafty.stage.elem.removeChild(c);
 		});
 
+		// Local variables for flashing animation
+		var flashing = false;
+		var flashingCounter = 0;
+		var flashes = 0;
+		var visible = true;
 		this.bind('EnterFrame', function () {
 			// TODO: We need to implement selective redraw at some point...maybe
 			ctx.clearRect(0, 0, Crafty.viewport.width, Crafty.viewport.height);
@@ -238,18 +247,33 @@ Crafty.c('Particles', {
 			this._Particles.update();
 			
 			// Render them!
-			this._Particles.render(ctx);
+			if (visible) { this._Particles.render(ctx); }
 
 			// Loop through each particle, if any of them are still enabled, 
 			// keep running the engine, else destroy it to save resources
-			var alive = false;
-			for (var i = 0; i < this._Particles.particles.length; i++) {
+			//var alive = false;
+			/*for (var i = 0; i < this._Particles.particles.length; i++) {
 				if (this._Particles.particles[i].enabled == true) {
 					alive = true;
 					break;
 				}
-			};
-			if (!alive) {
+			};*/
+
+			if (flashing) {
+					flashingCounter++;
+					if (flashingCounter === 20 && visible === false) {
+						visible = true;
+						flashingCounter = 0;
+						flashes++;
+					} else if (flashingCounter === 20 && visible === true) {
+						visible = false;
+						flashingCounter = 0;
+					}
+			}
+			if (this._Particles.frame >= this._Particles.timetolive) {
+				flashing = true;
+			}
+			if (flashes === 3) {
 				this.destroy();
 			}
 		});
@@ -273,7 +297,10 @@ Crafty.c('Particles', {
 		decelerationMax: 0,
 		follow: true,
 
+		timetolive: 0,
+
 		// Object to create a particle from
+		// TODO: Add comment here to describe all params
 		particle: {
 			x: 0,
 			y: 0,
@@ -284,7 +311,11 @@ Crafty.c('Particles', {
 			frame: 0,
 			timetolive: 0,
 			enabled: true,
-			color: ''
+			color: '',
+			flashing: false,
+			flashingCounter: 0,
+			flashes: 0,
+			visible: true
 		},
 
 		update: function (frame) {
@@ -299,7 +330,8 @@ Crafty.c('Particles', {
 				for (var i = 0; i < 5; i++) {
 					var newParticle = Object.create(this.particle);
 					newParticle.angle = Crafty.math.randomNumber(0, 2 * Math.PI);
-					newParticle.timetolive = Crafty.math.randomInt(this.timetolivelow, this.timetolivehigh);
+					//newParticle.timetolive = Crafty.math.randomInt(this.timetolivelow, this.timetolivehigh);
+					//newParticle.timetolive = this.timetolive;
 					newParticle.color = 'rgb(255, ' + Crafty.math.randomInt(20, 160) + ', 0)';
 					newParticle.velocityX = this.speed * Math.sin(newParticle.angle);
 					newParticle.velocityY = this.speed * Math.cos(newParticle.angle);
@@ -339,7 +371,7 @@ Crafty.c('Particles', {
 						if (this.particles[i].velocityY > -2) { this.particles[i].velocityY -= 0.04; }
 					}
 
-					if (this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
+					if (this.particles[i].enabled && this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
 						this.particles[i].enabled = false;
 						// Update score
 						Crafty('Score').each(function() {
@@ -349,12 +381,31 @@ Crafty.c('Particles', {
 					}
 				}
 
-				/* Increment the number of frames this particle has been alive for, if this is greater
-				 * than the particle's timetolive, disable the particle from being rendered */
+				// Increment the number of frames this particle has been alive for,
+				// if this is greater than the particle's timetolive, start a
+				// flashing animation, after a while it will be destroyed
 				this.particles[i].frame++;
 				if (this.particles[i].frame >= this.particles[i].timetolive) {
 					//this.particles[i].enabled = false;
 				}
+
+				/*// Do flashing animation for dying particles
+				if (this.particles[i].flashing && this.particles[i].enabled) {
+					this.particles[i].flashingCounter++;
+					if (this.particles[i].flashingCounter === 30 && this.particles[i].visible === true) {
+						this.particles[i].visible = false;
+						this.particles[i].flashingCounter = 0;
+						this.particles[i].flashes++;
+					} else if (this.particles[i].flashingCounter === 30 && this.particles[i].visible === false) {
+						this.particles[i].visible = true;
+						this.particles[i].flashingCounter = 0;
+					}
+				}
+
+				// Kill particles
+				if (this.particles[i].flashes === 3) {
+					this.particles[i].enabled = false;
+				}*/
 			};
 
 			// Disable the particle engine if duration has been reached
