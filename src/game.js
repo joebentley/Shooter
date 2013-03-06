@@ -48,7 +48,7 @@ Game = {
 
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
-				.attr({ x:20, y:20, w:200, h:20, z:1, score:0, red:0, green:255, blue:0 })
+				.attr({ x:20, y:20, w:200, h:20, z:1, score:0 })
 				.text('Score: 0')
 				.textColor('#FFFFFF')
 				.css({'font-size': '150%'});
@@ -61,11 +61,12 @@ Game = {
 				Crafty('ShootingEnemy').each(function () { this.destroy(); });
 				Crafty('Bullet').each(function () { this.destroy(); });
 				Crafty('Particles').each(function () { this.destroy(); });
+				Crafty('Powerup').each(function () { this.destroy(); });
 
 				// Update score
 				Crafty('Score').each(function() {
-						this.score = 0;
-						this.text('Score: ' + this.score);
+					this.score = 0;
+					this.text('Score: ' + this.score);
 				});
 
 				// Reset waves
