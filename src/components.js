@@ -1,15 +1,23 @@
 Crafty.c('Player', {
 	init: function () {
 		this.requires('Fourway, Color, DOM, MouseFollow, Keyboard, Collision')
-			.attr({ x:290, y:190, w:20, h:20, z:1 })
+			.attr({ x:290, y:190, w:20, h:20, z:0 })
 			.color('rgb(20, 125, 40)')
 			.fourway(2);
 
 		this.origin('center');
 
 		var tripleshot = false;
+		var invuln = false;
+		var rapidfire = false;
 
-		this.bind('EnterFrame', function () {
+		var tripleshotCounter = 0;
+		var invulnCounter = 0;
+		var rapidfireCounter = 0;
+
+		var bulletSpeed = 5;
+
+		this.bind('EnterFrame', function (e) {
 			// Stop movement on screen edge
 			if (this.x < 0) {
 				this.x = 0;
@@ -24,19 +32,23 @@ Crafty.c('Player', {
 				this.y = 400 - this.h;
 			}
 
-			// Destroy this and the MouseFollow entity on collision with enemy
-			if (this.hit('Enemy')) {
+			// Destroy this and the MouseFollow entity on collision with enemy and not invulnerable
+			if (this.hit('Enemy') && !invuln) {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
 			}
 
-			// Die if hit by enemy bullet
-			var b = this.hit('Bullet');
-			if (b) {
-				if (b[0].obj.enemy) {
-					this.removeComponent('MouseFollow', false);
-					this.destroy();
-					b[0].obj.destroy();
+			// Die if hit by enemy bullet and not invulnerable
+			if (!invuln) {
+				// Get array of bullet entities being collided with
+				var b = this.hit('Bullet');
+				// Check if that entity exists
+				if (b) {
+					if (b[0].obj.enemy) {
+						this.removeComponent('MouseFollow', false);
+						this.destroy();
+						b[0].obj.destroy();
+					}
 				}
 			}
 
@@ -45,21 +57,63 @@ Crafty.c('Player', {
 			if (p) {
 				if (p[0].obj.type === 'tripleshot') {
 					tripleshot = true;
-					p[0].obj.destroy();
+				} else if (p[0].obj.type === 'invuln') {
+					invuln = true;
+				} else if (p[0].obj.type === 'rapidfire') {
+					rapidfire = true;
 				}
+				p[0].obj.destroy();
+			}
+
+			// If rapidfire enabled, fire bullets every 10 frames, and increase bullet speed
+			if (rapidfire && e.frame % 10 === 0) {
+				Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, 6, false);
+			}
+
+			// If invuln, make the player golden, else just green as normal
+			if (invuln) {
+				this.color('rgb(255, 255, 0)');
+			} else {
+				this.color('rgb(20, 125, 40)');
+			}
+
+			// Disable tripleshot after 10 * 60 frames (600)
+			if (tripleshotCounter >= 600) {
+				tripleshot = false;
+				tripleshotCounter = 0;
+			} else if (tripleshot) {
+				tripleshotCounter++;
+			}
+
+			// Disable faster after 10 * 60 frames (600)
+			if (rapidfireCounter >= 600) {
+				rapidfire = false;
+				rapidfireCounter = 0;
+			} else if (rapidfire) {
+				rapidfireCounter++;
+			}
+
+			// Disable invuln after 6 * 60 frames (360)
+			if (invulnCounter >= 360) {
+				invuln = false;
+				invulnCounter = 0;
+			} else if (invuln) {
+				invulnCounter++;
 			}
 		})
 
 		this.bind('clickedscreen', function (e) {
 			// If the player left clicks the screen, fire a bullet in the direction we are facing
 			// TODO: replace height and width with actual generic calculations
-			if (e.mouseButton === Crafty.mouseButtons.LEFT) {
-				if (!tripleshot) {
-					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
-				} else {
-					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation - 10, false);
-					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, false);
-					Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation + 10, false);
+			if (!rapidfire) {
+				if (e.mouseButton === Crafty.mouseButtons.LEFT) {
+					if (!tripleshot) {
+						Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, bulletSpeed, false);
+					} else {
+						Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation - 10, bulletSpeed, false);
+						Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, bulletSpeed, false);
+						Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation + 10, bulletSpeed, false);
+					}
 				}
 			}
 		})
@@ -97,12 +151,10 @@ Crafty.c('Bullet', {
 		this.enemy = false;
 	},
 
-	bullet: function (x, y, direction, enemy) {
+	bullet: function (x, y, direction, speed, enemy) {
 		this.x = x;
 		this.y = y;
 		this.enemy = enemy;
-
-		var speed = 5;
 
 		this.bind('EnterFrame', function () {
 			this.rotation = direction;
@@ -150,7 +202,7 @@ Crafty.c('Enemy', {
 			var b = this.hit('Bullet')
 			if (b) {
 				// Only die if not enemy bullet and if inside screen
-				if (!b[0].obj.enemy && this.x > -15 && this.x < 615 && this.y > -15 && this.y < 415) {
+				if (!b[0].obj.enemy && this.x > -this.w && this.x < 600 + this.w && this.y > -this.h && this.y < 400 + this.h) {
 					// Get angle of bullet, convert to radians
 					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
@@ -207,16 +259,18 @@ Crafty.c('FollowingEnemy', {
 
 Crafty.c('ShootingEnemy', {
 	init: function () {
-		this.requires('FollowingEnemy');
+		this.requires('FollowingEnemy')
+		.attr({ w:18, h:18 })
+		.color('rgb(200, 0, 0)');
 	},
 
-	shootingenemy: function (x, y, speed) {
+	shootingenemy: function (x, y, speed, rate) {
 		// Call parent constructor
 		this.followingenemy(x, y, speed);
 
 		this.bind('EnterFrame', function (e) {
-			if (e.frame % 60 === 0) {
-				Crafty.e('Bullet').bullet(this.x + 3, this.y + 3, this.rotation, true);
+			if (e.frame % rate === 0) {
+				Crafty.e('Bullet').bullet(this.x + 3, this.y + 3, this.rotation, 4, true);
 			}
 		});
 	}
@@ -397,6 +451,9 @@ Crafty.c('Particles', {
 						if (this.particles[i].velocityY > -2) { this.particles[i].velocityY -= 0.04; }
 					}
 
+					// We have to roll our own collision here as this is a component that spawns
+					// multiple particles that we track and draw ourselves instead of using
+					// the 2D component that is used with most of our entities
 					if (this.particles[i].enabled && this.particles[i].x > p.x && this.particles[i].x < p.x + p.w && this.particles[i].y > p.y && this.particles[i].y < p.y + p.h) {
 						this.particles[i].enabled = false;
 						// Update score

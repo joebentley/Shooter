@@ -5,7 +5,6 @@ Game = {
 		Crafty.settings.modify('autoPause', true);
 
 		var random = Crafty.math.randomInt;
-		var wave = 1;
 
 		Crafty.scene('Gameplay', function () {
 			// We use a background object to handle mouse movement and actions
@@ -29,7 +28,8 @@ Game = {
 
 			Crafty.e('Player');
 
-			Crafty.e('Powerup').powerup(200, -20, 2, 'tripleshot');
+			//Crafty.e('Powerup').powerup(200, -20, 2, 'faster');
+			//Crafty.e('ShootingEnemy').shootingenemy(200, 200, 2);
 
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
@@ -60,12 +60,37 @@ Game = {
 			});
 
 			var enemies = 0;
+			var wave = 1;
+			var framesSincePowerup = 0;
 			Crafty.bind('EnterFrame', function (e) {
+				// If it has been longer than 1200 frames since a powerup was spawned, random chance of spawning one
+				if (e.frame % 100 === 0 && framesSincePowerup >= 1200) {
+					// 1: no powerup, 2: tripleshot, 3: invuln, 4: rapidfire
+					var powerup = random(1, 4);
+					var type = '';
+					switch (powerup) {
+						case 2:
+							type = 'tripleshot';
+							break;
+						case 3:
+							type = 'invuln';
+							break;
+						case 4:
+							type = 'rapidfire'
+							break;
+					}
+					// Spawn powerup
+					if (powerup != 1) {
+						Crafty.e('Powerup').powerup(random(100, 500), -20, 1, type);
+						framesSincePowerup = 0;
+					}
+				}
+				framesSincePowerup++;
 
 				// Make the game harder on higher waves, faster and new enemies
 				if (wave === 1) {
-					// Only generate 20 enemies
-					if (enemies < 20) {
+					// Only generate 40 enemies
+					if (enemies < 40) {
 						if (e.frame === 0 || e.frame % 120 === 0) {
 							// side: left = 1, up = 2, right = 3, down = 4
 							var side = random(1, 4);
@@ -92,12 +117,12 @@ Game = {
 							enemies++;
 						}
 					} else {
-						// If there are more than 20 enemies, go onto the next wave
+						// Enemy limit reached, go onto the next wave
 						wave++;
 						enemies = 0;
 					}
 				} else if (wave === 2) {
-					if (enemies < 20) {
+					if (enemies < 50) {
 						if (e.frame % 100 === 0) {
 							// side: left = 1, up = 2, right = 3, down = 4
 							var side = random(1, 4);
@@ -124,11 +149,15 @@ Game = {
 							if (enemyType === 1) {
 								Crafty.e('FollowingEnemy').followingenemy(x, y, speed);
 							} else if (enemyType === 2) {
-								Crafty.e('ShootingEnemy').shootingenemy(x, y, speed);
+								Crafty.e('ShootingEnemy').shootingenemy(x, y, speed, 50);
 							}
 
 							enemies++;
 						}
+					} else {
+						// go onto the next wave
+						wave++;
+						enemies = 0;
 					}
 				} else if (wave === 3) {
 					//if (enemies < 20) {
@@ -161,14 +190,14 @@ Game = {
 							if (enemyType === 1) {
 								Crafty.e('FollowingEnemy').followingenemy(x, y, speed);
 							} else if (enemyType === 2) {
-								Crafty.e('ShootingEnemy').shootingenemy(x, y, speed);
+								Crafty.e('ShootingEnemy').shootingenemy(x, y, speed, 30);
 							}
 
 							if (twoEnemies === 2) {
 								if (enemyType === 1) {
 									Crafty.e('FollowingEnemy').followingenemy(x, y, speed);
 								} else if (enemyType === 2) {
-									Crafty.e('ShootingEnemy').shootingenemy(x, y, speed);
+									Crafty.e('ShootingEnemy').shootingenemy(x, y, speed, 30);
 								}
 							}
 
