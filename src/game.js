@@ -6,6 +6,21 @@ Game = {
 
 		var random = Crafty.math.randomInt;
 
+		Crafty.scene('Title', function () {
+			var keyboardHandler = Crafty.e('Keyboard');
+			keyboardHandler.bind('KeyDown', function () {
+				if (this.isDown('ENTER')) {
+					Crafty.scene('Gameplay');
+				}
+			});
+
+			Crafty.e('DOM, 2D, Text')
+				.attr({ x:90, y:180, w:500, z:1 })
+				.text('Press enter to start game')
+				.textColor('#FFFFFF')
+				.css({'font-size': '180%'});
+		});
+
 		Crafty.scene('Gameplay', function () {
 			// We use a background object to handle mouse movement and actions
 			// over the whole screen by making it the width and height of the
@@ -33,9 +48,10 @@ Game = {
 
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
-				.attr({ x:20, y:20, w:200, h:20, z:1, score:0 })
+				.attr({ x:20, y:20, w:200, h:20, z:1, score:0, red:0, green:255, blue:0 })
 				.text('Score: 0')
-				.textColor('#FFFFFF');
+				.textColor('#FFFFFF')
+				.css({'font-size': '150%'});
 
 			Crafty.bind('reset', function () {
 				// Clear game entities
@@ -208,7 +224,7 @@ Game = {
 			});
 		});
 
-		Crafty.scene('Gameplay');
+		Crafty.scene('Title');
 	}
 }
 

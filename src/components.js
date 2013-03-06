@@ -1,7 +1,7 @@
 Crafty.c('Player', {
 	init: function () {
 		this.requires('Fourway, Color, DOM, MouseFollow, Keyboard, Collision')
-			.attr({ x:290, y:190, w:20, h:20, z:0 })
+			.attr({ x:290, y:190, w:20, h:20, z:1 })
 			.color('rgb(20, 125, 40)')
 			.fourway(2);
 
@@ -192,7 +192,7 @@ Crafty.c('Powerup', {
 Crafty.c('Enemy', {
 	init: function () {
 		this.requires('2D, Color, DOM, Collision')
-			.attr({ x:0, y:0, w:15, h:15, z:1 })
+			.attr({ x:0, y:0, w:15, h:15, z:2 })
 			.color('rgb(255, 0, 0)');
 
 		this.origin('center');
@@ -306,11 +306,26 @@ Crafty.c('Particles', {
 		this._Particles.decelerationMax = deceleration;
 		this._Particles.follow = follow;
 
-		// Destroy the particle engine when the component is removed or destroyed
+		// Set up a text prompt that displays next to a particle when the player comes in contact with it
+		this._Particles.text = Crafty.e('2D, DOM, Text')
+							.attr({ x:-300, y:-300, w:200, alpha:0.0, score:0 })
+							.text('+1')
+							.textColor('#FFFFFF')
+							.css({'font-size': '150%'})
+							.bind('EnterFrame', function () {
+								this.alpha -= this.alpha * 0.05;
+								if (this.alpha < 0.1) {
+									this.alpha = 0;
+								}
+							});
+
+		// Clean up DOM when component is removed or destroyed
 		this.bind('Remove', function () {
+			this._Particles.text.destroy();
 			Crafty.stage.elem.removeChild(c);
-		}).bind("RemoveComponent", function (id) {
-			if (id === "particles")
+		}).bind('RemoveComponent', function (id) {
+			this._Particles.text.destroy();
+			if (id === 'particles')
 				Crafty.stage.elem.removeChild(c);
 		});
 
@@ -378,6 +393,8 @@ Crafty.c('Particles', {
 		follow: true,
 
 		timetolive: 0,
+
+		text: null,
 
 		// Object to create a particle from
 		// TODO: Add comment here to describe all params
@@ -461,6 +478,17 @@ Crafty.c('Particles', {
 							this.score += 1;
 							this.text('Score: ' + this.score);
 						});
+
+						// Update text position if particles are far away from text
+						if (this.particles[i].x + 50 < this.text.x || this.particles[i].x -50 > this.text.x || this.particles[i].y + 50 < this.text.y || this.particles[i].y - 50 > this.text.y) {
+							this.text.x = this.particles[i].x;
+							this.text.y = this.particles[i].y;
+						}
+
+						this.text.alpha = 1;
+
+						this.text.score++;
+						this.text.text("+" + this.text.score);
 					}
 				}
 
@@ -468,9 +496,9 @@ Crafty.c('Particles', {
 				// if this is greater than the particle's timetolive, start a
 				// flashing animation, after a while it will be destroyed
 				this.particles[i].frame++;
-				if (this.particles[i].frame >= this.particles[i].timetolive) {
+				//if (this.particles[i].frame >= this.particles[i].timetolive) {
 					//this.particles[i].enabled = false;
-				}
+				//}
 
 				/*// Do flashing animation for dying particles
 				if (this.particles[i].flashing && this.particles[i].enabled) {
@@ -496,6 +524,11 @@ Crafty.c('Particles', {
 				this.running = false;
 			}
 			this.frame++;
+						
+			// If the text is fully transparent, wipe the score
+			if (this.text.alpha === 0) {
+				this.text.score = 0;
+			}
 		},
 
 		render: function (ctx) {
