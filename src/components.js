@@ -55,13 +55,35 @@ Crafty.c('Player', {
 			// If hit powerup, enable it
 			var p = this.hit('Powerup');
 			if (p) {
+				// Color of floating text depends on powerup being picked up
+				var textColor = '';
+
 				if (p[0].obj.type === 'tripleshot') {
 					tripleshot = true;
+					textColor = '#0044FF';
 				} else if (p[0].obj.type === 'invuln') {
 					invuln = true;
+					textColor = '#FFFF00';
 				} else if (p[0].obj.type === 'rapidfire') {
 					rapidfire = true;
+					textColor = '#FF0000'
 				}
+
+				// Floating text on screen
+				Crafty.e('2D, DOM, Text')
+					.attr({ x:this.x, y:this.y, w:200, alpha:1 })
+					.text(p[0].obj.type.toUpperCase())
+					.textColor(textColor)
+					.css({'font-size': '150%'})
+					.bind('EnterFrame', function () {
+						this.alpha -= this.alpha * 0.02;
+						if (this.alpha < 0.1) {
+							this.alpha = 0;
+						} else if (this.alpha < 0.8) { // If disappearing, move up the screen slightly
+							this.y -= this.y * 0.001;
+						}
+					});
+
 				p[0].obj.destroy();
 			}
 
@@ -307,7 +329,7 @@ Crafty.c('Particles', {
 		this._Particles.follow = follow;
 
 		// Set up a text prompt that displays next to a particle when the player comes in contact with it
-		this._Particles.text = Crafty.e('2D, DOM, Text')
+		/*this._Particles.text = Crafty.e('2D, DOM, Text')
 							.attr({ x:-300, y:-300, w:200, alpha:0.0, score:0 })
 							.text('+1')
 							.textColor('#FFFFFF')
@@ -317,14 +339,14 @@ Crafty.c('Particles', {
 								if (this.alpha < 0.1) {
 									this.alpha = 0;
 								}
-							});
+							});*/
 
 		// Clean up DOM when component is removed or destroyed
 		this.bind('Remove', function () {
-			this._Particles.text.destroy();
+			//this._Particles.text.destroy();
 			Crafty.stage.elem.removeChild(c);
 		}).bind('RemoveComponent', function (id) {
-			this._Particles.text.destroy();
+			//this._Particles.text.destroy();
 			if (id === 'particles')
 				Crafty.stage.elem.removeChild(c);
 		});
@@ -394,7 +416,7 @@ Crafty.c('Particles', {
 
 		timetolive: 0,
 
-		text: null,
+		//text: null,
 
 		// Object to create a particle from
 		// TODO: Add comment here to describe all params
@@ -479,7 +501,9 @@ Crafty.c('Particles', {
 							this.text('Score: ' + this.score);
 						});
 
-						// Update text position if particles are far away from text
+						Crafty.trigger('particlecollision', this.particles[i]);
+
+						/*// Update text position if particles are far away from text
 						if (this.particles[i].x + 50 < this.text.x || this.particles[i].x -50 > this.text.x || this.particles[i].y + 50 < this.text.y || this.particles[i].y - 50 > this.text.y) {
 							this.text.x = this.particles[i].x;
 							this.text.y = this.particles[i].y;
@@ -488,7 +512,7 @@ Crafty.c('Particles', {
 						this.text.alpha = 1;
 
 						this.text.score++;
-						this.text.text("+" + this.text.score);
+						this.text.text("+" + this.text.score);*/
 					}
 				}
 
@@ -525,10 +549,10 @@ Crafty.c('Particles', {
 			}
 			this.frame++;
 						
-			// If the text is fully transparent, wipe the score
+			/*// If the text is fully transparent, wipe the score
 			if (this.text.alpha === 0) {
 				this.text.score = 0;
-			}
+			}*/
 		},
 
 		render: function (ctx) {

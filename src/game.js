@@ -76,6 +76,35 @@ Game = {
 				Crafty.e('Player');
 			});
 
+			var pointsText = Crafty.e('2D, DOM, Text')
+				.attr({ x:-300, y:-300, w:200, alpha:0.0, score:0 })
+				.text('+1')
+				.textColor('#FFFFFF')
+				.css({'font-size': '150%'})
+				.bind('EnterFrame', function () {
+					this.alpha -= this.alpha * 0.05;
+					if (this.alpha < 0.1) {
+						this.alpha = 0;
+					} else if (this.alpha < 0.8) { // If disappearing, move up the screen slightly
+						this.y -= this.y * 0.001;
+					}
+					// If invisible, reset score
+					if (this.alpha === 0) {
+						this.score = 0;
+					}
+				});
+
+			Crafty.bind('particlecollision', function (e) {
+				// Update text position if particles are far away from text or the text has a low opacity
+				if (pointsText.alpha < 0.2 || e.x + 100 < pointsText.x || e.x -100 > pointsText.x || e.y + 100 < pointsText.y || e.y -100 > pointsText.y) {
+					pointsText.x = e.x;
+					pointsText.y = e.y;
+				}		
+				pointsText.alpha = 1;
+				pointsText.score++;
+				pointsText.text("+" + pointsText.score);
+			});
+
 			var enemies = 0;
 			var wave = 1;
 			var framesSincePowerup = 0;
