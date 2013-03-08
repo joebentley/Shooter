@@ -169,8 +169,8 @@ Crafty.c('MouseFollow', {
 // Onscreen cursor instead of default mouse
 Crafty.c('Cursor', {
 	init: function () {
-		this.requires('2D, Color, DOM')
-			.attr({ x:-20, y:-20, w:3, h:3, z: 2 })
+		this.requires('2D, Color, Canvas')
+			.attr({ x:-20, y:-20, w:3, h:3, z:2 })
 			.color('rgb(255,255,255)');
 
 		this.bind('mousemovement', function (e) {
