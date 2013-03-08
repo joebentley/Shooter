@@ -5,6 +5,8 @@ Crafty.c('Player', {
 			.color('rgb(20, 125, 40)')
 			.fourway(2);
 
+		this.mousefollow(20, 20);
+
 		this.origin('center');
 
 		var tripleshot = false;
@@ -77,8 +79,9 @@ Crafty.c('Player', {
 					.css({'font-size': '150%'})
 					.bind('EnterFrame', function () {
 						this.alpha -= this.alpha * 0.02;
-						if (this.alpha < 0.1) {
-							this.alpha = 0;
+						if (this.alpha < 0.05) {
+							// Destroy text if almost disappeared, we don't want it hanging around on the screen...
+							this.destroy();
 						} else if (this.alpha < 0.8) { // If disappearing, move up the screen slightly
 							this.y -= this.y * 0.001;
 						}
@@ -145,7 +148,9 @@ Crafty.c('Player', {
 Crafty.c('MouseFollow', {
 	init: function () {
 		this.requires('2D');
+	},
 
+	mousefollow: function (width, height) {
 		var mouseX = 0;
 		var mouseY = 0;
 
@@ -156,7 +161,21 @@ Crafty.c('MouseFollow', {
 
 		this.bind('EnterFrame', function () {
 			// Use trig to find rotation amount, we add 90 to line the 0 value with the y-axis instead of the x-axis
-			this.rotation = (Math.atan2(mouseY - this.y, mouseX - this.x) * 180 / Math.PI) + 90;
+			this.rotation = (Math.atan2(mouseY - height/2 - this.y, mouseX - width/2 - this.x) * 180 / Math.PI) + 90;
+		});
+	}
+});
+
+// Onscreen cursor instead of default mouse
+Crafty.c('Cursor', {
+	init: function () {
+		this.requires('2D, Color, DOM')
+			.attr({ x:-20, y:-20, w:3, h:3, z: 2 })
+			.color('rgb(255,255,255)');
+
+		this.bind('mousemovement', function (e) {
+			this.x = Crafty.mousePos.x + 1;
+			this.y = Crafty.mousePos.y + 1;
 		});
 	}
 });

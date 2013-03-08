@@ -43,6 +43,8 @@ Game = {
 
 			Crafty.e('Player');
 
+			Crafty.e('Cursor');
+
 			//Crafty.e('Powerup').powerup(200, -20, 2, 'faster');
 			//Crafty.e('ShootingEnemy').shootingenemy(200, 200, 2);
 
