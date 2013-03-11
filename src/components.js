@@ -248,7 +248,7 @@ Crafty.c('Enemy', {
 					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
 					// Particle effect
-					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 300, 0.5, 10, 0.01, true);
+					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 250, 0.5, 10, 0.01, true);
 
 					// Remove entities
 					this.destroy();
@@ -458,7 +458,7 @@ Crafty.c('Particles', {
 
 		update: function (frame) {
 			// If the particle engine is running, start generating new particles
-			if (this.running && this.particles.length <= 200) {
+			if (this.running && this.frame < 10) {
 				/* Generate some particles... add five particles this frame
 				 * Build an object with random angle and random timetolive
 				 * between the two boundaries, and generate a random color

@@ -233,8 +233,6 @@ Game = {
 								y = random(450, 600);
 							}
 
-							console.log("heee");
-							
 							if (enemyType === 1) {
 								Crafty.e('FollowingEnemy').followingenemy(x, y, speed);
 							} else if (enemyType === 2) {
