@@ -39,14 +39,10 @@ Game = {
 				}
 			});
 
+			// Set up default entites
 			Crafty.e('Starfield').starfield();
-
 			Crafty.e('Player');
-
 			Crafty.e('Cursor');
-
-			//Crafty.e('Powerup').powerup(200, -20, 2, 'faster');
-			//Crafty.e('ShootingEnemy').shootingenemy(200, 200, 2);
 
 			// Display score
 			Crafty.e('Score, DOM, 2D, Text')
@@ -55,6 +51,7 @@ Game = {
 				.textColor('#FFFFFF')
 				.css({'font-size': '150%'});
 
+			// Handle game reset
 			Crafty.bind('reset', function () {
 				// Clear game entities
 				Crafty('Player').destroy();
@@ -78,6 +75,7 @@ Game = {
 				Crafty.e('Player');
 			});
 
+			// This text is shown when a player collects points
 			var pointsText = Crafty.e('2D, DOM, Text')
 				.attr({ x:-300, y:-300, w:200, alpha:0.0, score:0 })
 				.text('+1')

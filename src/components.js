@@ -35,9 +35,12 @@ Crafty.c('Player', {
 			}
 
 			// Destroy this and the MouseFollow entity on collision with enemy and not invulnerable
-			if (this.hit('Enemy') && !invuln) {
+			var enemy = this.hit('Enemy');
+			if (enemy && !invuln) {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
+			} else if (e && invuln) {
+				enemy[0].obj.destroy();
 			}
 
 			// Die if hit by enemy bullet and not invulnerable
@@ -110,7 +113,7 @@ Crafty.c('Player', {
 				tripleshotCounter++;
 			}
 
-			// Disable faster after 10 * 60 frames (600)
+			// Disable rapidfire after 10 * 60 frames (600)
 			if (rapidfireCounter >= 600) {
 				rapidfire = false;
 				rapidfireCounter = 0;
@@ -171,7 +174,7 @@ Crafty.c('Cursor', {
 	init: function () {
 		this.requires('2D, Color, Canvas')
 			.attr({ x:-20, y:-20, w:3, h:3, z:2 })
-			.color('rgb(255,255,255)');
+			.color('rgb(0, 255, 0)');
 
 		this.bind('mousemovement', function (e) {
 			this.x = Crafty.mousePos.x + 1;
@@ -197,7 +200,13 @@ Crafty.c('Bullet', {
 		this.y = y;
 		this.enemy = enemy;
 
-		this.bind('EnterFrame', function () {
+		if (enemy) {
+			this.color('rgb(255, 0, 0)');
+		} else {
+			this.color('rgb(255, 255, 0)');
+		}
+
+		this.bind('EnterFrame', function (e) {
 			this.rotation = direction;
 
 			this.x += Math.sin(direction * (Math.PI / 180)) * speed;
@@ -247,10 +256,7 @@ Crafty.c('Enemy', {
 					// Get angle of bullet, convert to radians
 					//var angle = b[0].obj.rotation * (Math.PI / 180);
 
-					// Particle effect
-					Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 250, 0.5, 10, 0.01, true);
-
-					// Remove entities
+					// Remove this and bullet
 					this.destroy();
 					b[0].obj.destroy();
 
@@ -267,6 +273,12 @@ Crafty.c('Enemy', {
 				this.destroy();
 			}
 		});
+
+		// Triggered when enemy is destroyed
+		this.bind('Remove', function () {
+			// Particle effect
+			Crafty.e('Particles').particles(this.x + this.w/2, this.y + this.h/2, 250, 0.5, 10, 0.01, true);
+		})
 	},
 
 	enemy: function (x, y) {
