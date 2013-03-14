@@ -39,7 +39,7 @@ Crafty.c('Player', {
 			if (enemy && !invuln) {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
-			} else if (e && invuln) {
+			} else if (enemy && invuln) {
 				enemy[0].obj.destroy();
 			}
 
@@ -98,31 +98,57 @@ Crafty.c('Player', {
 				Crafty.e('Bullet').bullet(this.x + 9, this.y + 9, this.rotation, 6, false);
 			}
 
-			// If invuln, make the player golden, else just green as normal
-			if (invuln) {
+			// TODO: Make this somehow work for multiple powerups...
+			// If the player has a powerup activated, and they have been picked up this frame, make the player that colour, else just green
+			if (invuln && invulnCounter === 0) {
 				this.color('rgb(255, 255, 0)');
-			} else {
+			} else if (tripleshot && tripleshotCounter === 0) {
+				this.color('rgb(0, 0, 255)');
+			} else if (rapidfire && rapidfireCounter === 0) {
+				this.color('rgb(255, 0, 0)');
+			} else if (!invuln && !tripleshot && !rapidfire){
 				this.color('rgb(20, 125, 40)');
 			}
 
-			// Disable tripleshot after 10 * 60 frames (600)
-			if (tripleshotCounter >= 600) {
+			// Disable tripleshot after 15 * 60 frames (900), flashing anim after 700 frames
+			if (tripleshotCounter > 700) {
+				if (tripleshotCounter % 30 === 0) {
+					this.color('rgb(20, 125, 40)');
+				} else if (tripleshotCounter % 15 === 0) {
+					this.color('rgb(0, 0, 255)');
+				}
+			}
+			if (tripleshotCounter >= 900) {
 				tripleshot = false;
 				tripleshotCounter = 0;
 			} else if (tripleshot) {
 				tripleshotCounter++;
 			}
 
-			// Disable rapidfire after 10 * 60 frames (600)
-			if (rapidfireCounter >= 600) {
+			// Disable rapidfire after 15 * 60 frames (900), flashing anim after 700 frames
+			if (rapidfireCounter > 700) {
+				if (rapidfireCounter % 30 === 0) {
+					this.color('rgb(20, 125, 40)');
+				} else if (rapidfireCounter % 15 === 0) {
+					this.color('rgb(255, 0, 0)');
+				}
+			}
+			if (rapidfireCounter >= 900) {
 				rapidfire = false;
 				rapidfireCounter = 0;
 			} else if (rapidfire) {
 				rapidfireCounter++;
 			}
 
-			// Disable invuln after 6 * 60 frames (360)
-			if (invulnCounter >= 360) {
+			// Disable invuln after 10 * 60 frames (600), flashing anim after 450 frames
+			if (invulnCounter > 450) {
+				if (invulnCounter % 30 === 0) {
+					this.color('rgb(20, 125, 40)');
+				} else if (invulnCounter % 15 === 0) {
+				this.color('rgb(255, 255, 0)');
+				}
+			}
+			if (invulnCounter >= 600) {
 				invuln = false;
 				invulnCounter = 0;
 			} else if (invuln) {
