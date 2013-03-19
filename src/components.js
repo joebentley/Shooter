@@ -6,7 +6,6 @@ Crafty.c('Player', {
 			.fourway(2);
 
 		this.mousefollow(20, 20);
-
 		this.origin('center');
 
 		var tripleshot = false;
@@ -18,6 +17,10 @@ Crafty.c('Player', {
 		var rapidfireCounter = 0;
 
 		var bulletSpeed = 5;
+
+		var lives = 2;
+		var gracePeriod = false;
+		var graceCounter = 0;
 
 		this.bind('EnterFrame', function (e) {
 			// Stop movement on screen edge
@@ -34,13 +37,30 @@ Crafty.c('Player', {
 				this.y = 400 - this.h;
 			}
 
-			// Destroy this and the MouseFollow entity on collision with enemy and not invulnerable
+			// Destroy this and the MouseFollow entity on collision with enemy and not invulnerable and not on grace period
 			var enemy = this.hit('Enemy');
-			if (enemy && !invuln) {
+			if (enemy && !invuln && lives === 0 && !gracePeriod) {
 				this.removeComponent('MouseFollow', false);
 				this.destroy();
 			} else if (enemy && invuln) {
 				enemy[0].obj.destroy();
+			} else if (enemy && lives > 0 && !gracePeriod) {
+				lives--;
+				gracePeriod = true;
+				graceCounter = 180;
+			}
+
+			if (gracePeriod) {
+				graceCounter--;
+			}
+			if (graceCounter <= 0) {
+				gracePeriod = false;
+			}
+			// Flashing animation for grace counter
+			if (graceCounter % 30 === 0 && graceCounter !== 0) {
+				this.alpha = 0;
+			} else if (graceCounter % 15 === 0 && graceCounter !== 0) {
+				this.alpha = 1;
 			}
 
 			// Die if hit by enemy bullet and not invulnerable
@@ -62,7 +82,7 @@ Crafty.c('Player', {
 			if (p) {
 				// Color of floating text depends on powerup being picked up
 				var textColor = '';
-				
+
 				switch (p[0].obj.type) {
 					case 'tripleshot':
 						tripleshot = true;
