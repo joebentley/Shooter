@@ -62,16 +62,20 @@ Crafty.c('Player', {
 			if (p) {
 				// Color of floating text depends on powerup being picked up
 				var textColor = '';
-
-				if (p[0].obj.type === 'tripleshot') {
-					tripleshot = true;
-					textColor = '#0044FF';
-				} else if (p[0].obj.type === 'invuln') {
-					invuln = true;
-					textColor = '#FFFF00';
-				} else if (p[0].obj.type === 'rapidfire') {
-					rapidfire = true;
-					textColor = '#FF0000'
+				
+				switch (p[0].obj.type) {
+					case 'tripleshot':
+						tripleshot = true;
+						textColor = '#0044FF';
+						break;
+					case 'invuln':
+						invuln = true;
+						textColor = '#FFFF00';
+						break;
+					case 'rapidfire':
+						rapidfire = true;
+						textColor = '#FF0000';
+						break;
 				}
 
 				// Floating text on screen
@@ -279,18 +283,9 @@ Crafty.c('Enemy', {
 			if (b) {
 				// Only die if not enemy bullet and if inside screen
 				if (!b[0].obj.enemy && this.x > -this.w && this.x < 600 + this.w && this.y > -this.h && this.y < 400 + this.h) {
-					// Get angle of bullet, convert to radians
-					//var angle = b[0].obj.rotation * (Math.PI / 180);
-
 					// Remove this and bullet
 					this.destroy();
 					b[0].obj.destroy();
-
-					/*// Update score
-					Crafty('Score').each(function() {
-						this.score += 100;
-						this.text('Score: ' + this.score);
-					});*/
 				}
 			}
 
